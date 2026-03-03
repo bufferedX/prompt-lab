@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Prompt Lab</title>
+  <meta name="description" content="Generate unexpected, imaginative prompts for image generators and writing. Pick a theme, pick a vibe, receive the unthinkable." />
+  <meta property="og:title" content="The Prompt Lab" />
+  <meta property="og:description" content="Prompts you'd never dream up alone." />
+  <meta property="og:type" content="website" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧪</text></svg>" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: #f4f1ed;
+      font-family: 'DM Mono', monospace;
+      color: #1a1714;
+    }
+
+    .app {
+      min-height: 100vh;
+      padding: 52px 24px 96px;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    .eyebrow {
+      font-size: 10px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: #a09890;
+      margin-bottom: 16px;
+    }
+
+    .title {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(38px, 9vw, 60px);
+      font-weight: 400;
+      line-height: 1.04;
+      color: #1a1714;
+      margin-bottom: 12px;
+    }
+
+    .title em { font-style: italic; color: #b0a898; }
+
+    .subtitle {
+      font-size: 11px;
+      color: #a09890;
+      letter-spacing: 0.4px;
+      margin-bottom: 56px;
+    }
+
+    .section { margin-bottom: 28px; }
+
+    .section-label {
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #c0b8b0;
+      margin-bottom: 10px;
+    }
+
+    .tags { display: flex; flex-wrap: wrap; gap: 7px; }
+
+    .tag {
+      padding: 7px 15px;
+      border-radius: 100px;
+      background: #eae6e0;
+      color: #a09890;
+      font-size: 11px;
+      font-family: 'DM Mono', monospace;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .tag:hover { color: #1a1714; background: #e2ded8; }
+    .tag.active { background: #1a1714; color: #f4f1ed; }
+
+    .divider { width: 100%; height: 1px; background: #ddd9d3; margin: 40px 0; }
+
+    .gen-btn {
+      width: 100%;
+      padding: 17px;
+      border-radius: 10px;
+      border: none;
+      background: #1a1714;
+      color: #f4f1ed;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .gen-btn:disabled {
+      background: #eae6e0;
+      color: #c0b8b0;
+      cursor: not-allowed;
+    }
+
+    .gen-btn:not(:disabled):hover {
+      background: #2e2a26;
+      transform: translateY(-1px);
+      box-shadow: 0 10px 28px rgba(26,23,20,0.14);
+    }
+
+    .loading-bar {
+      position: absolute; bottom: 0; left: -60%;
+      height: 2px; width: 60%;
+      background: linear-gradient(90deg, transparent, #c8b89a, transparent);
+      animation: sweep 1.6s ease-in-out infinite;
+    }
+
+    @keyframes sweep { to { left: 100%; } }
+
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 36px;
+    }
+
+    .results-meta { font-size: 11px; color: #a09890; line-height: 1.9; }
+
+    .nav-btn {
+      font-size: 10px; color: #a09890; background: none; border: none;
+      cursor: pointer; font-family: 'DM Mono', monospace;
+      letter-spacing: 2px; text-transform: uppercase; transition: color 0.15s;
+    }
+    .nav-btn:hover { color: #1a1714; }
+
+    /* Prompt cards */
+    .prompt-card {
+      border-top: 1px solid #ddd9d3;
+      padding: 28px 0;
+      opacity: 0;
+      animation: up 0.35s ease forwards;
+    }
+
+    .p1 { animation-delay: 0.05s; }
+    .p2 { animation-delay: 0.12s; }
+    .p3 { animation-delay: 0.19s; }
+    .p4 { animation-delay: 0.26s; }
+    .p5 { animation-delay: 0.33s; }
+
+    @keyframes up {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .prompt-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 16px;
+      margin-bottom: 6px;
+    }
+
+    .prompt-num { font-size: 10px; color: #c0b8b0; letter-spacing: 2px; flex-shrink: 0; }
+
+    .prompt-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 20px;
+      font-style: italic;
+      color: #1a1714;
+      flex: 1;
+      line-height: 1.2;
+    }
+
+    .prompt-meta {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .meta-tag {
+      font-size: 9px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #a09890;
+      background: #eae6e0;
+      padding: 3px 10px;
+      border-radius: 100px;
+    }
+
+    .prompt-body {
+      font-size: 12.5px;
+      line-height: 1.95;
+      color: #6e6862;
+      margin-bottom: 16px;
+    }
+
+    /* Copy buttons row */
+    .copy-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .copy-btn {
+      padding: 7px 14px;
+      border-radius: 6px;
+      border: 1px solid #ddd9d3;
+      background: transparent;
+      color: #a09890;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .copy-btn:hover { background: #eae6e0; color: #1a1714; border-color: #c0b8b0; }
+    .copy-btn.done { color: #8aaa8a; border-color: #b8d4b8; background: #f0f7f0; }
+
+    .copy-btn.mj { border-color: #b8c4d4; color: #7a90a8; }
+    .copy-btn.mj:hover { background: #eef1f5; color: #3a5068; }
+    .copy-btn.mj.done { color: #8aaa8a; border-color: #b8d4b8; background: #f0f7f0; }
+
+    .copy-btn.dalle { border-color: #c4b8d4; color: #907a98; }
+    .copy-btn.dalle:hover { background: #f3f0f7; color: #604870; }
+    .copy-btn.dalle.done { color: #8aaa8a; border-color: #b8d4b8; background: #f0f7f0; }
+
+    /* Writing prompt first line */
+    .first-line {
+      font-family: 'DM Serif Display', serif;
+      font-style: italic;
+      font-size: 14px;
+      color: #a09890;
+      border-left: 2px solid #ddd9d3;
+      padding-left: 14px;
+      margin-bottom: 16px;
+      line-height: 1.6;
+    }
+
+    .first-line-label {
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #c0b8b0;
+      margin-bottom: 5px;
+    }
+
+    /* Bottom actions */
+    .bottom {
+      border-top: 1px solid #ddd9d3;
+      padding-top: 24px;
+      display: flex;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .sm-btn {
+      flex: 1; padding: 13px; border-radius: 8px;
+      border: 1px solid #ddd9d3; background: transparent;
+      color: #a09890; font-family: 'DM Mono', monospace;
+      font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .sm-btn:hover { background: #eae6e0; color: #1a1714; }
+    .sm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .err { font-size: 11px; color: #c07070; margin-top: 10px; text-align: center; }
+
+    .footer {
+      margin-top: 64px;
+      padding-top: 24px;
+      border-top: 1px solid #ddd9d3;
+      font-size: 10px;
+      color: #c0b8b0;
+      letter-spacing: 1px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    const THEMES  = ["nature", "people", "abstract", "urban", "fantasy", "sci-fi"];
+    const VIBES   = ["eerie", "dreamy", "gritty", "whimsical", "cinematic", "melancholic"];
+    const MEDIUMS = ["image", "writing"];
+
+    const VIBE_LABELS = {
+      eerie: "eerie & unsettling", dreamy: "dreamy & ethereal",
+      gritty: "raw & gritty", whimsical: "whimsical & playful",
+      cinematic: "dark & cinematic", melancholic: "tender & melancholic",
+    };
+
+    const THEME_LABELS = {
+      nature: "nature / landscape", people: "people / characters",
+      abstract: "abstract / surreal", urban: "urban / architecture",
+      fantasy: "fantasy / mythology", "sci-fi": "sci-fi / futuristic",
+    };
+
+    function App() {
+      const [theme, setTheme]     = useState(null);
+      const [vibe, setVibe]       = useState(null);
+      const [medium, setMedium]   = useState("image");
+      const [prompts, setPrompts] = useState([]);
+      const [loading, setLoading] = useState(false);
+      const [error, setError]     = useState(null);
+      const [copied, setCopied]   = useState(null); // "idx-type"
+      const [step, setStep]       = useState("configure");
+
+      const generate = async () => {
+        if (!theme || !vibe) return;
+        setLoading(true);
+        setError(null);
+        try {
+          const res = await fetch("/api/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ theme, vibe, medium }),
+          });
+          const data = await res.json();
+          if (data.error) throw new Error(data.error);
+          setPrompts(data.prompts || []);
+          setStep("results");
+        } catch (e) {
+          setError(e.message || "something went wrong — try again?");
+        }
+        setLoading(false);
+      };
+
+      const copy = (text, key) => {
+        navigator.clipboard.writeText(text);
+        setCopied(key);
+        setTimeout(() => setCopied(null), 2000);
+      };
+
+      const reset = () => { setStep("configure"); setPrompts([]); };
+
+      return (
+        <div className="app">
+          <div className="eyebrow">🧪 the prompt lab</div>
+          <h1 className="title">prompts you'd<br />never <em>dream up.</em></h1>
+          <p className="subtitle">pick a theme. pick a vibe. receive the unexpected.</p>
+
+          {step === "configure" && <>
+            <div className="section">
+              <div className="section-label">medium</div>
+              <div className="tags">
+                {MEDIUMS.map(m => (
+                  <button key={m} className={`tag ${medium === m ? "active" : ""}`} onClick={() => setMedium(m)}>
+                    {m === "image" ? "🎨 image" : "✍️ writing"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="section">
+              <div className="section-label">theme</div>
+              <div className="tags">
+                {THEMES.map(t => (
+                  <button key={t} className={`tag ${theme === t ? "active" : ""}`} onClick={() => setTheme(t === theme ? null : t)}>
+                    {THEME_LABELS[t]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="section">
+              <div className="section-label">vibe</div>
+              <div className="tags">
+                {VIBES.map(v => (
+                  <button key={v} className={`tag ${vibe === v ? "active" : ""}`} onClick={() => setVibe(v === vibe ? null : v)}>
+                    {VIBE_LABELS[v]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="divider" />
+
+            <button className="gen-btn" onClick={generate} disabled={!theme || !vibe || loading}>
+              {loading
+                ? <><span>conjuring prompts...</span><div className="loading-bar" /></>
+                : (!theme || !vibe) ? "select theme + vibe to continue"
+                : "generate →"}
+            </button>
+            {error && <p className="err">{error}</p>}
+          </>}
+
+          {step === "results" && <>
+            <div className="results-header">
+              <div className="results-meta">
+                {THEME_LABELS[theme]}<br />{VIBE_LABELS[vibe]} · {medium}
+              </div>
+              <button className="nav-btn" onClick={reset}>← back</button>
+            </div>
+
+            {prompts.map((p, i) => (
+              <div key={i} className={`prompt-card p${i + 1}`}>
+                <div className="prompt-top">
+                  <span className="prompt-num">0{i + 1}</span>
+                  <span className="prompt-title">{p.title}</span>
+                </div>
+
+                {/* mood + palette tags */}
+                <div className="prompt-meta">
+                  {p.mood && <span className="meta-tag">{p.mood}</span>}
+                  {p.palette && <span className="meta-tag">{p.palette}</span>}
+                </div>
+
+                {/* writing: optional first line */}
+                {medium === "writing" && p.firstLine && (
+                  <div style={{marginBottom:"14px"}}>
+                    <div className="first-line-label">opening line</div>
+                    <div className="first-line">"{p.firstLine}"</div>
+                  </div>
+                )}
+
+                <p className="prompt-body">{p.body}</p>
+
+                {/* copy buttons */}
+                <div className="copy-row">
+                  {medium === "image" ? <>
+                    <button
+                      className={`copy-btn mj ${copied === `${i}-mj` ? "done" : ""}`}
+                      onClick={() => copy(p.midjourney || p.body, `${i}-mj`)}
+                    >
+                      {copied === `${i}-mj` ? "✓ copied" : "copy for midjourney"}
+                    </button>
+                    <button
+                      className={`copy-btn dalle ${copied === `${i}-dalle` ? "done" : ""}`}
+                      onClick={() => copy(p.dalle || p.body, `${i}-dalle`)}
+                    >
+                      {copied === `${i}-dalle` ? "✓ copied" : "copy for dall·e 3"}
+                    </button>
+                    <button
+                      className={`copy-btn ${copied === `${i}-base` ? "done" : ""}`}
+                      onClick={() => copy(p.body, `${i}-base`)}
+                    >
+                      {copied === `${i}-base` ? "✓ copied" : "copy base"}
+                    </button>
+                  </> : <>
+                    <button
+                      className={`copy-btn ${copied === `${i}-base` ? "done" : ""}`}
+                      onClick={() => copy(p.body, `${i}-base`)}
+                    >
+                      {copied === `${i}-base` ? "✓ copied" : "copy prompt"}
+                    </button>
+                    {p.firstLine && (
+                      <button
+                        className={`copy-btn ${copied === `${i}-fl` ? "done" : ""}`}
+                        onClick={() => copy(p.firstLine, `${i}-fl`)}
+                      >
+                        {copied === `${i}-fl` ? "✓ copied" : "copy opening line"}
+                      </button>
+                    )}
+                  </>}
+                </div>
+              </div>
+            ))}
+
+            <div className="bottom">
+              <button className="sm-btn" onClick={generate} disabled={loading}>
+                {loading ? "conjuring..." : "↻ regenerate"}
+              </button>
+              <button className="sm-btn" onClick={reset}>new prompt</button>
+            </div>
+          </>}
+
+          <div className="footer">the prompt lab · built with claude</div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
