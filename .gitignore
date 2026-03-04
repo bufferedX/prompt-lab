@@ -1,3 +1,5 @@
 .vercel
 .env.local
 .env
+claude-project-instructions.md
+claude-artifact-selector.jsx
