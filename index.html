@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>The Prompt Lab</title>
-  <meta name="description" content="Generate unexpected, imaginative prompts for image generators and writing. Pick a theme, pick a vibe, receive the unthinkable." />
+  <title>The Prompt Lab — Etsy Digital Downloads</title>
+  <meta name="description" content="Generate Etsy-optimized AI art prompts for digital downloads. Wall art, Frame TV art, seamless patterns, clipart — with SEO tags included." />
   <meta property="og:title" content="The Prompt Lab" />
-  <meta property="og:description" content="Prompts you'd never dream up alone." />
+  <meta property="og:description" content="Etsy-ready prompts for AI art digital downloads." />
   <meta property="og:type" content="website" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧪</text></svg>" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet" />
@@ -201,6 +201,43 @@
       margin-bottom: 16px;
     }
 
+    /* Etsy fields */
+    .etsy-section {
+      margin-bottom: 16px;
+    }
+
+    .etsy-label {
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #c0b8b0;
+      margin-bottom: 5px;
+    }
+
+    .etsy-title-text {
+      font-family: 'DM Serif Display', serif;
+      font-size: 13px;
+      color: #6e6862;
+      line-height: 1.5;
+      margin-bottom: 6px;
+    }
+
+    .etsy-tags-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 6px;
+    }
+
+    .etsy-tag {
+      font-size: 9px;
+      color: #7a90a8;
+      background: #eef1f5;
+      padding: 3px 8px;
+      border-radius: 100px;
+      letter-spacing: 0.5px;
+    }
+
     /* Copy buttons row */
     .copy-row {
       display: flex;
@@ -234,25 +271,9 @@
     .copy-btn.dalle:hover { background: #f3f0f7; color: #604870; }
     .copy-btn.dalle.done { color: #8aaa8a; border-color: #b8d4b8; background: #f0f7f0; }
 
-    /* Writing prompt first line */
-    .first-line {
-      font-family: 'DM Serif Display', serif;
-      font-style: italic;
-      font-size: 14px;
-      color: #a09890;
-      border-left: 2px solid #ddd9d3;
-      padding-left: 14px;
-      margin-bottom: 16px;
-      line-height: 1.6;
-    }
-
-    .first-line-label {
-      font-size: 9px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: #c0b8b0;
-      margin-bottom: 5px;
-    }
+    .copy-btn.etsy { border-color: #d4c4b8; color: #a08870; }
+    .copy-btn.etsy:hover { background: #f7f3ef; color: #705838; }
+    .copy-btn.etsy.done { color: #8aaa8a; border-color: #b8d4b8; background: #f0f7f0; }
 
     /* Bottom actions */
     .bottom {
@@ -292,30 +313,43 @@
   <script type="text/babel">
     const { useState } = React;
 
-    const THEMES  = ["nature", "people", "abstract", "urban", "fantasy", "sci-fi"];
-    const VIBES   = ["eerie", "dreamy", "gritty", "whimsical", "cinematic", "melancholic"];
-    const MEDIUMS = ["image", "writing"];
+    const PRODUCT_TYPES = ["wall-art", "frame-tv", "seamless-pattern", "clipart"];
+    const THEMES  = ["botanical", "landscape", "fantasy", "architecture", "celestial", "animals"];
+    const VIBES   = ["dark-academia", "cottagecore", "gothic-romantic", "ethereal", "noir", "vintage-botanical"];
 
-    const VIBE_LABELS = {
-      eerie: "eerie & unsettling", dreamy: "dreamy & ethereal",
-      gritty: "raw & gritty", whimsical: "whimsical & playful",
-      cinematic: "dark & cinematic", melancholic: "tender & melancholic",
+    const PRODUCT_LABELS = {
+      "wall-art": "wall art",
+      "frame-tv": "frame TV art",
+      "seamless-pattern": "seamless pattern",
+      clipart: "clipart / PNG",
     };
 
     const THEME_LABELS = {
-      nature: "nature / landscape", people: "people / characters",
-      abstract: "abstract / surreal", urban: "urban / architecture",
-      fantasy: "fantasy / mythology", "sci-fi": "sci-fi / futuristic",
+      botanical: "botanical",
+      landscape: "landscape",
+      fantasy: "fantasy",
+      architecture: "architecture",
+      celestial: "celestial",
+      animals: "animals",
+    };
+
+    const VIBE_LABELS = {
+      "dark-academia": "dark academia",
+      cottagecore: "cottagecore",
+      "gothic-romantic": "gothic romantic",
+      ethereal: "ethereal",
+      noir: "noir",
+      "vintage-botanical": "vintage botanical",
     };
 
     function App() {
+      const [productType, setProductType] = useState("wall-art");
       const [theme, setTheme]     = useState(null);
       const [vibe, setVibe]       = useState(null);
-      const [medium, setMedium]   = useState("image");
       const [prompts, setPrompts] = useState([]);
       const [loading, setLoading] = useState(false);
       const [error, setError]     = useState(null);
-      const [copied, setCopied]   = useState(null); // "idx-type"
+      const [copied, setCopied]   = useState(null);
       const [step, setStep]       = useState("configure");
 
       const generate = async () => {
@@ -326,7 +360,7 @@
           const res = await fetch("/api/generate", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ theme, vibe, medium }),
+            body: JSON.stringify({ theme, vibe, productType }),
           });
           const data = await res.json();
           if (data.error) throw new Error(data.error);
@@ -349,23 +383,23 @@
       return (
         <div className="app">
           <div className="eyebrow">🧪 the prompt lab</div>
-          <h1 className="title">prompts you'd<br />never <em>dream up.</em></h1>
-          <p className="subtitle">pick a theme. pick a vibe. receive the unexpected.</p>
+          <h1 className="title">etsy-ready<br /><em>AI art</em> prompts.</h1>
+          <p className="subtitle">pick a product. pick a subject. pick an aesthetic. get selling.</p>
 
           {step === "configure" && <>
             <div className="section">
-              <div className="section-label">medium</div>
+              <div className="section-label">product type</div>
               <div className="tags">
-                {MEDIUMS.map(m => (
-                  <button key={m} className={`tag ${medium === m ? "active" : ""}`} onClick={() => setMedium(m)}>
-                    {m === "image" ? "🎨 image" : "✍️ writing"}
+                {PRODUCT_TYPES.map(p => (
+                  <button key={p} className={`tag ${productType === p ? "active" : ""}`} onClick={() => setProductType(p)}>
+                    {PRODUCT_LABELS[p]}
                   </button>
                 ))}
               </div>
             </div>
 
             <div className="section">
-              <div className="section-label">theme</div>
+              <div className="section-label">subject</div>
               <div className="tags">
                 {THEMES.map(t => (
                   <button key={t} className={`tag ${theme === t ? "active" : ""}`} onClick={() => setTheme(t === theme ? null : t)}>
@@ -376,7 +410,7 @@
             </div>
 
             <div className="section">
-              <div className="section-label">vibe</div>
+              <div className="section-label">aesthetic</div>
               <div className="tags">
                 {VIBES.map(v => (
                   <button key={v} className={`tag ${vibe === v ? "active" : ""}`} onClick={() => setVibe(v === vibe ? null : v)}>
@@ -391,7 +425,7 @@
             <button className="gen-btn" onClick={generate} disabled={!theme || !vibe || loading}>
               {loading
                 ? <><span>conjuring prompts...</span><div className="loading-bar" /></>
-                : (!theme || !vibe) ? "select theme + vibe to continue"
+                : (!theme || !vibe) ? "select subject + aesthetic to continue"
                 : "generate →"}
             </button>
             {error && <p className="err">{error}</p>}
@@ -400,7 +434,7 @@
           {step === "results" && <>
             <div className="results-header">
               <div className="results-meta">
-                {THEME_LABELS[theme]}<br />{VIBE_LABELS[vibe]} · {medium}
+                {PRODUCT_LABELS[productType]}<br />{THEME_LABELS[theme]} · {VIBE_LABELS[vibe]}
               </div>
               <button className="nav-btn" onClick={reset}>← back</button>
             </div>
@@ -412,59 +446,69 @@
                   <span className="prompt-title">{p.title}</span>
                 </div>
 
-                {/* mood + palette tags */}
                 <div className="prompt-meta">
                   {p.mood && <span className="meta-tag">{p.mood}</span>}
                   {p.palette && <span className="meta-tag">{p.palette}</span>}
                 </div>
 
-                {/* writing: optional first line */}
-                {medium === "writing" && p.firstLine && (
-                  <div style={{marginBottom:"14px"}}>
-                    <div className="first-line-label">opening line</div>
-                    <div className="first-line">"{p.firstLine}"</div>
+                <p className="prompt-body">{p.body}</p>
+
+                {/* Etsy listing title */}
+                {p.etsyTitle && (
+                  <div className="etsy-section">
+                    <div className="etsy-label">etsy listing title</div>
+                    <div className="etsy-title-text">{p.etsyTitle}</div>
                   </div>
                 )}
 
-                <p className="prompt-body">{p.body}</p>
+                {/* Etsy tags */}
+                {p.etsyTags && p.etsyTags.length > 0 && (
+                  <div className="etsy-section">
+                    <div className="etsy-label">etsy tags</div>
+                    <div className="etsy-tags-wrap">
+                      {p.etsyTags.map((tag, j) => (
+                        <span key={j} className="etsy-tag">{tag}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-                {/* copy buttons */}
+                {/* Copy buttons */}
                 <div className="copy-row">
-                  {medium === "image" ? <>
+                  <button
+                    className={`copy-btn mj ${copied === `${i}-mj` ? "done" : ""}`}
+                    onClick={() => copy(p.midjourney || p.body, `${i}-mj`)}
+                  >
+                    {copied === `${i}-mj` ? "✓ copied" : "midjourney"}
+                  </button>
+                  <button
+                    className={`copy-btn dalle ${copied === `${i}-dalle` ? "done" : ""}`}
+                    onClick={() => copy(p.dalle || p.body, `${i}-dalle`)}
+                  >
+                    {copied === `${i}-dalle` ? "✓ copied" : "dall·e 3"}
+                  </button>
+                  <button
+                    className={`copy-btn ${copied === `${i}-base` ? "done" : ""}`}
+                    onClick={() => copy(p.body, `${i}-base`)}
+                  >
+                    {copied === `${i}-base` ? "✓ copied" : "base prompt"}
+                  </button>
+                  {p.etsyTitle && (
                     <button
-                      className={`copy-btn mj ${copied === `${i}-mj` ? "done" : ""}`}
-                      onClick={() => copy(p.midjourney || p.body, `${i}-mj`)}
+                      className={`copy-btn etsy ${copied === `${i}-etitle` ? "done" : ""}`}
+                      onClick={() => copy(p.etsyTitle, `${i}-etitle`)}
                     >
-                      {copied === `${i}-mj` ? "✓ copied" : "copy for midjourney"}
+                      {copied === `${i}-etitle` ? "✓ copied" : "etsy title"}
                     </button>
+                  )}
+                  {p.etsyTags && p.etsyTags.length > 0 && (
                     <button
-                      className={`copy-btn dalle ${copied === `${i}-dalle` ? "done" : ""}`}
-                      onClick={() => copy(p.dalle || p.body, `${i}-dalle`)}
+                      className={`copy-btn etsy ${copied === `${i}-etags` ? "done" : ""}`}
+                      onClick={() => copy(p.etsyTags.join(", "), `${i}-etags`)}
                     >
-                      {copied === `${i}-dalle` ? "✓ copied" : "copy for dall·e 3"}
+                      {copied === `${i}-etags` ? "✓ copied" : "etsy tags"}
                     </button>
-                    <button
-                      className={`copy-btn ${copied === `${i}-base` ? "done" : ""}`}
-                      onClick={() => copy(p.body, `${i}-base`)}
-                    >
-                      {copied === `${i}-base` ? "✓ copied" : "copy base"}
-                    </button>
-                  </> : <>
-                    <button
-                      className={`copy-btn ${copied === `${i}-base` ? "done" : ""}`}
-                      onClick={() => copy(p.body, `${i}-base`)}
-                    >
-                      {copied === `${i}-base` ? "✓ copied" : "copy prompt"}
-                    </button>
-                    {p.firstLine && (
-                      <button
-                        className={`copy-btn ${copied === `${i}-fl` ? "done" : ""}`}
-                        onClick={() => copy(p.firstLine, `${i}-fl`)}
-                      >
-                        {copied === `${i}-fl` ? "✓ copied" : "copy opening line"}
-                      </button>
-                    )}
-                  </>}
+                  )}
                 </div>
               </div>
             ))}
@@ -477,7 +521,7 @@
             </div>
           </>}
 
-          <div className="footer">the prompt lab · built with claude</div>
+          <div className="footer">the prompt lab · etsy edition · built with claude</div>
         </div>
       );
     }

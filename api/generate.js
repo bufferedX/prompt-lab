@@ -3,99 +3,107 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { theme, vibe, medium } = req.body;
+  const { theme, vibe, productType } = req.body;
 
-  if (!theme || !vibe || !medium) {
-    return res.status(400).json({ error: "Missing required fields: theme, vibe, medium" });
+  if (!theme || !vibe || !productType) {
+    return res.status(400).json({ error: "Missing required fields: theme, vibe, productType" });
   }
 
   const THEME_LABELS = {
-    nature: "nature / landscape",
-    people: "people / characters",
-    abstract: "abstract / surreal",
-    urban: "urban / architecture",
-    fantasy: "fantasy / mythology",
-    "sci-fi": "sci-fi / futuristic",
+    botanical: "botanical — flowers, plants, herbs, mushrooms",
+    landscape: "landscape — forests, mountains, oceans, meadows",
+    fantasy: "fantasy — mythical creatures, enchanted scenes, fairy tales",
+    architecture: "architecture — castles, cathedrals, ruins, cottages",
+    celestial: "celestial — galaxies, moons, stars, cosmic scenes",
+    animals: "animals — wildlife, pets, mystical creatures",
   };
 
   const VIBE_LABELS = {
-    eerie: "eerie & unsettling",
-    dreamy: "dreamy & ethereal",
-    gritty: "raw & gritty",
-    whimsical: "whimsical & playful",
-    cinematic: "dark & cinematic",
-    melancholic: "tender & melancholic",
+    "dark-academia": "dark academia — moody, vintage, literary, scholarly",
+    cottagecore: "cottagecore — soft, romantic, pastoral, whimsical",
+    "gothic-romantic": "gothic romantic — dark, ornate, dramatic, mysterious",
+    ethereal: "ethereal — dreamy, luminous, otherworldly, delicate",
+    noir: "noir — high-contrast, shadows, cinematic, urban",
+    "vintage-botanical": "vintage botanical — antique illustration, muted tones, scientific",
   };
 
-  const imageSystemPrompt = `You are a world-class image prompt engineer with deep knowledge of generative AI models including Midjourney, DALL-E 3, Stable Diffusion, and Ideogram. You think like a fusion of a film director, fine art photographer, and concept artist.
+  const PRODUCT_CONFIGS = {
+    "wall-art": {
+      label: "Printable Wall Art",
+      arMidjourney: "--ar 2:3",
+      arNote: "portrait orientation (2:3) for standard print sizes (8x12, 16x24, 20x30)",
+      extraMjFlags: "--style raw --stylize 750 --v 6.1",
+      sizeNote: "Provide in standard print sizes: 2:3 (portrait) and 3:2 (landscape)",
+    },
+    "frame-tv": {
+      label: "Samsung Frame TV Art",
+      arMidjourney: "--ar 16:9",
+      arNote: "landscape 16:9 for Samsung Frame TV (3840x2160)",
+      extraMjFlags: "--style raw --stylize 750 --v 6.1",
+      sizeNote: "Optimized for 3840x2160 display, landscape orientation only",
+    },
+    "seamless-pattern": {
+      label: "Seamless Pattern / Digital Paper",
+      arMidjourney: "--ar 1:1 --tile",
+      arNote: "square 1:1 seamless tileable pattern",
+      extraMjFlags: "--style raw --stylize 500 --v 6.1",
+      sizeNote: "Square seamless tile, 3600x3600px at 300 DPI for digital paper",
+    },
+    clipart: {
+      label: "Clipart / PNG Elements",
+      arMidjourney: "--ar 1:1",
+      arNote: "square 1:1, isolated subject on solid white or transparent background",
+      extraMjFlags: "--style raw --stylize 400 --v 6.1",
+      sizeNote: "Isolated element on plain background, PNG with transparency",
+    },
+  };
 
-Your job is to generate 5 image prompts that produce breathtaking, print-worthy artwork. Each prompt must be so vivid and specific that someone reading it can already picture the finished piece hanging on their wall.
+  const config = PRODUCT_CONFIGS[productType];
+  if (!config) {
+    return res.status(400).json({ error: "Invalid product type" });
+  }
 
-For each prompt you must engineer all 9 layers:
+  const systemPrompt = `You are an expert Etsy digital download prompt engineer specializing in AI-generated art for profitable Etsy shops. You combine deep knowledge of Midjourney, DALL-E 3, and Stable Diffusion with expertise in what sells on Etsy's marketplace.
 
-SUBJECT — The precise subject with hyper-specific details. Never "a woman" — always "a woman in her late 60s, silver hair pinned loosely, paint-stained hands, mid-exhale."
+Your job is to generate 5 image prompts optimized for creating ${config.label} that will sell as digital downloads on Etsy.
 
-CONTEXT — Time, place, micro-details of the environment that make it feel inhabited and real. What season? What hour? What small objects are present?
+PRODUCT FORMAT: ${config.label}
+ASPECT RATIO: ${config.arNote}
+SIZE REQUIREMENTS: ${config.sizeNote}
 
-COMPOSITION — Exact framing (rule of thirds, dutch angle, symmetrical, worm's eye, extreme wide), what occupies foreground vs background, how negative space is used, where the eye travels.
+For each prompt you must engineer these layers:
 
-LIGHTING — The single most important factor. Name the exact light quality and direction: Rembrandt lighting, golden hour backlight, bioluminescent underglow, overcast diffused, single candle source from below, neon spill from the left. Light creates mood more than any other element.
+SUBJECT — Hyper-specific subject with precise details. Never generic. Every detail must add visual value and Etsy appeal.
 
-ATMOSPHERE — Color grade (desaturated + single accent color, hyper-saturated, duotone, warm amber, cold steel blue), emotional temperature, the tactile feeling of the air in the scene.
+COMPOSITION — Exact framing optimized for ${config.label}. Consider how this will look ${productType === "frame-tv" ? "displayed on a Samsung Frame TV in a living room" : productType === "wall-art" ? "printed and framed on a wall" : productType === "seamless-pattern" ? "tiled as digital paper or fabric" : "as an isolated PNG element in a design project"}.
 
-TECHNICAL SPEC — Camera body and lens if photographic (medium format Hasselblad, 35mm Kodak Portra 400, drone bird's eye, 85mm portrait), or medium if illustrative (oil on linen, risograph print, woodblock, gouache on paper, digital matte painting).
+LIGHTING & ATMOSPHERE — Name exact light quality and color grade. This creates the mood that sells.
 
-REFERENCE ANCHORS — 2 specific artists, photographers, or filmmakers whose aesthetic fingerprint should be felt. Be precise: not "impressionist" but "Joaquin Sorolla's light-drenched brushwork." Not "cinematic" but "Roger Deakins' cold Scandinavian compositions in The Assassination of Jesse James."
+TECHNICAL SPEC — Camera/lens for photographic styles, or medium for illustrative styles (oil painting, watercolor, risograph, gouache, etc.).
 
-QUALITY BOOSTERS — End every prompt with: masterwork, museum quality, extraordinary detail, emotionally resonant, award-winning composition, 8k resolution.
+STYLE ANCHORS — 2 specific artists or aesthetic references whose fingerprint should be felt.
 
-NEGATIVE ANCHORS — Add what to avoid: --no text, watermarks, blurry, oversaturated, generic stock photo aesthetic, amateur composition, plastic textures.
+${productType === "seamless-pattern" ? "PATTERN RULES — Must be seamlessly tileable. Elements should flow naturally into edges. No obvious seams or centered focal points. Describe the repeat structure (scattered, diagonal, grid, flowing).\n\n" : ""}${productType === "clipart" ? "ISOLATION RULES — Subject must be isolated on a plain white background. No background scenery. Clean edges suitable for PNG transparency extraction. Single element or small grouped set.\n\n" : ""}QUALITY BOOSTERS — End every prompt with quality markers appropriate to the style.
+
+NEGATIVE ANCHORS — Add what to avoid: --no text, watermarks, blurry, oversaturated, generic stock aesthetic.
 
 Critical rules:
-— "Beautiful" is banned. Show beauty, never label it.
-— Every prompt must feel like a specific frozen moment in time, not a concept.
-— Each of the 5 prompts must be completely distinct in composition, color palette, and emotional register.
+— Every prompt must feel like a specific, sellable product — not a concept.
+— Each of the 5 prompts must be completely distinct in composition, palette, and emotional register.
 — Prompts must be 80-150 words each.
 — Write for the image, not the reader. Every word must add visual information.
+— Think about what Etsy buyers actually search for and purchase.
 
-For each prompt also return:
-- A "midjourney" version: append "--ar 3:2 --style raw --stylize 750 --v 6.1" and format for MJ's syntax
-- A "dalle" version: prepend "I WANT A PHOTOREALISTIC IMAGE. " and rephrase slightly for DALL-E 3's natural language preference, remove the --no syntax and replace with "Do not include: [list]"
+For each prompt return:
+- A "midjourney" version: format for MJ syntax, append "${config.arMidjourney} ${config.extraMjFlags}"
+- A "dalle" version: prepend "I WANT A PHOTOREALISTIC IMAGE. " (for photo styles) or describe style clearly, rephrase for DALL-E 3's natural language preference, replace --no syntax with "Do not include: [list]"
+- An "etsyTitle" field: a ready-to-use Etsy listing title (max 140 chars) that includes high-traffic keywords and is compelling to buyers
+- An "etsyTags" field: exactly 13 Etsy SEO tags (each max 20 chars) targeting high-traffic, relevant search terms for this product
 
-Return ONLY valid JSON. No markdown, no explanation.
-Format: {"prompts":[{"title":"Evocative 3-5 word title","body":"Base prompt","midjourney":"MJ-optimized version","dalle":"DALL-E 3 optimized version","mood":"2-3 word mood label","palette":"dominant color description"}]}`;
+Return ONLY valid JSON. No markdown, no code fences, no explanation.
+Format: {"prompts":[{"title":"Evocative 3-5 word title","body":"Base prompt","midjourney":"MJ-optimized version","dalle":"DALL-E 3 optimized version","etsyTitle":"Etsy listing title with keywords","etsyTags":["tag1","tag2","tag3","tag4","tag5","tag6","tag7","tag8","tag9","tag10","tag11","tag12","tag13"],"mood":"2-3 word mood label","palette":"dominant color description"}]}`;
 
-  const writingSystemPrompt = `You are a world-class writing prompt architect who thinks like a Booker Prize judge, a Sundance screenplay reader, and a literary editor at The Paris Review simultaneously.
-
-Your job is to generate 5 writing prompts so unexpected and specific that a writer reads them and immediately knows exactly what emotional truth they are being asked to excavate.
-
-For each prompt engineer all 6 layers:
-
-POV & NARRATOR — The specific consciousness: an unreliable narrator who believes they are reliable, a child who understands more than they let on, an omniscient narrator with one deliberate blind spot.
-
-TONAL REGISTER — The precise emotional frequency. Not "sad" but "the specific grief of realizing you've already had your last conversation with someone without knowing it."
-
-THE CONSTRAINT — A specific formal rule that creates productive creative pressure: must include exactly one lie the reader can identify, must begin and end with the same sentence but mean something different by the end.
-
-THE UNUSUAL ANGLE — The perspective that flips the expected: the villain's therapist, the last believer, the object in the room that witnesses everything.
-
-THE EMOTIONAL CORE — The precise human truth the story must arrive at. Not a theme but a feeling.
-
-THE FIRST LINE — One optional opening line so good it creates immediate forward momentum.
-
-Rules:
-— No fantasy quest plots. No dystopian chosen ones. No meet-cutes.
-— Every prompt must create dramatic irony before the writer types a word.
-— Each prompt must explore a completely different human relationship and emotional register.
-
-Return ONLY valid JSON. No markdown, no explanation.
-Format: {"prompts":[{"title":"Evocative 3-5 word title","body":"Full prompt","mood":"2-3 word mood label","firstLine":"Optional opening line"}]}`;
-
-  const systemPrompt = medium === "image" ? imageSystemPrompt : writingSystemPrompt;
-
-  const userMessage = medium === "image"
-    ? `Generate 5 print-worthy image prompts. Theme: ${THEME_LABELS[theme]}. Vibe: ${VIBE_LABELS[vibe]}. Make each one feel like a museum piece waiting to happen.`
-    : `Generate 5 literary writing prompts. Theme: ${THEME_LABELS[theme]}. Vibe: ${VIBE_LABELS[vibe]}. Make each one feel like a story only this writer could tell.`;
+  const userMessage = `Generate 5 ${config.label} prompts for Etsy digital downloads. Subject: ${THEME_LABELS[theme]}. Aesthetic: ${VIBE_LABELS[vibe]}. Make each one a best-seller waiting to happen.`;
 
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -107,14 +115,14 @@ Format: {"prompts":[{"title":"Evocative 3-5 word title","body":"Full prompt","mo
       },
       body: JSON.stringify({
         model: "claude-opus-4-6",
-        max_tokens: 3000,
+        max_tokens: 8000,
         system: systemPrompt,
         messages: [{ role: "user", content: userMessage }],
       }),
     });
 
     const data = await response.json();
-    if (data.error) return res.status(500).json({ error: data.error.message });
+    if (data.error) return res.status(500).json({ error: data.error.message || JSON.stringify(data.error) });
 
     const text = data.content?.map(b => b.text || "").join("") || "";
     const clean = text.replace(/```json|```/g, "").trim();
@@ -122,6 +130,7 @@ Format: {"prompts":[{"title":"Evocative 3-5 word title","body":"Full prompt","mo
 
     return res.status(200).json(parsed);
   } catch (err) {
-    return res.status(500).json({ error: "Failed to generate prompts. Please try again." });
+    console.error("Generate error:", err);
+    return res.status(500).json({ error: err.message || "Failed to generate prompts. Please try again." });
   }
 }
